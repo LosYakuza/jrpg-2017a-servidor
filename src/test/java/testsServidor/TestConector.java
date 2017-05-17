@@ -18,7 +18,7 @@ public class TestConector {
 		Conector conector = new Conector();
 		conector.connect();
 
-		// Pasado este punto la conexión con la base de datos resultó exitosa
+		// Pasado este punto la conexion con la base de datos resulto exitosa
 
 		Assert.assertEquals(1, 1);
 	}
