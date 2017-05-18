@@ -1,8 +1,5 @@
 # Created by https://www.gitignore.io/api/java,linux,windows,eclipse
 
-## proyecto
-primeraBase.bd
-
 ### Eclipse ###
 
 .metadata
