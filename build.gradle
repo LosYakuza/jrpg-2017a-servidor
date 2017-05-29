@@ -104,6 +104,7 @@ task fatJar(type: Jar) {
 
 findbugs {
     ignoreFailures = true
+    toolVersion = "2.0.1"
 }
 
 
