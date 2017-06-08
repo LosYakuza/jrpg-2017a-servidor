@@ -84,7 +84,7 @@ public class Conector {
 	 * Inserta en la tabla personaje
 	 * @param paquetePersonaje datos del personaje
 	 * @param paqueteUsuario datos del usuario
-	 * @return true si se pudo registrar el personaje, linkearlo al usuario y registrar su inventario.
+	 * @return true si se pudo registrar el personaje y linkearlo al usuario.
 	 *         false en caso contrario.
 	 */
 	public boolean registrarPersonaje(PaquetePersonaje paquetePersonaje, PaqueteUsuario paqueteUsuario) {
@@ -125,19 +125,7 @@ public class Conector {
 				stAsignarPersonaje.setString(2, paqueteUsuario.getUsername());
 				stAsignarPersonaje.setString(3, paqueteUsuario.getPassword());
 				stAsignarPersonaje.execute();
-
-				// Por ultimo registro el inventario y la mochila
-				if (this.registrarInventario(idPersonaje)) {
-					Servidor.log.append("El usuario " + paqueteUsuario.getUsername() + " ha creado el personaje "
-							+ paquetePersonaje.getId() + System.lineSeparator());
-					return true;
-				} else {
-					Servidor.log.append("Error al registrar la mochila y el inventario del usuario " + paqueteUsuario.getUsername() + " con el personaje" + paquetePersonaje.getId() + System.lineSeparator());
-					return false;
-				}
 			}
-
-
 		} catch (SQLException e) {
 			Servidor.log.append(
 					"Error al intentar crear el personaje " + paquetePersonaje.getNombre() + System.lineSeparator());
@@ -146,31 +134,6 @@ public class Conector {
 		}
 		return false;
 
-	}
-
-	/**
-	 * Vincula al inventario con el personaje.
-	 * @param idPersonaje id del personaje
-	 * @return true si pudo registrar el inventario;
-	 *         false en caso contrario.
-	 */
-	public boolean registrarInventario(final int idPersonaje) {
-		try {
-			// Preparo la consulta para el registro el inventario en la base de datos
-			PreparedStatement stRegistrarInventario = connect.prepareStatement(
-					"INSERT INTO inventario(idPersonaje) VALUES (?)");
-			stRegistrarInventario.setInt(1, idPersonaje);
-
-			// Registro inventario
-			stRegistrarInventario.execute();
-
-			Servidor.log.append("Se ha registrado el inventario de " + idPersonaje + System.lineSeparator());
-			return true;
-		} catch (SQLException e) {
-			Servidor.log.append("Error al registrar el inventario de " + idPersonaje + System.lineSeparator());
-			e.printStackTrace();
-			return false;
-		}
 	}
 
 	/**
@@ -266,6 +229,21 @@ public class Conector {
 			personaje.setNombre(result.getString("nombre"));
 			personaje.setExperiencia(result.getInt("experiencia"));
 			personaje.setNivel(result.getInt("nivel"));
+			
+			//Selecciono los items del personaje
+			PreparedStatement stSeleccionarItems = connect
+					.prepareStatement("SELECT * FROM item WHERE idPersonaje = ?");
+			stSeleccionarItems.setInt(1, idPersonaje);
+			result = stSeleccionarItems.executeQuery();
+
+			//Cargo el inventario del personaje
+			while (result != null && result.next()) {
+				personaje.equiparItem(result.getInt("valorSalud"), result.getInt("operacionSalud"),
+						result.getInt("valorFuerza"), result.getInt("operacionFuerza"),
+						result.getInt("valorDestreza"), result.getInt("operacionDestreza"),
+						result.getInt("valorInteligencia"), result.getInt("operacionInteligencia"),
+						result.getInt("valorEnergia"), result.getInt("operacionEnergia"));
+			}
 
 			// Devuelvo el paquete personaje con sus datos
 			return personaje;
