@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import dominio.Item;
 import mensajeria.PaquetePersonaje;
 import mensajeria.PaqueteUsuario;
 
@@ -178,7 +179,7 @@ public class Conector {
 		try {
 			PreparedStatement stActualizarPersonaje = connect
 					.prepareStatement("UPDATE personaje SET fuerza=?, destreza=?, inteligencia=?, saludTope=?, energiaTope=?, experiencia=?, nivel=? "
-							+ "  WHERE idPersonaje=?"); //Ver si acá me llegan los valores modificados por los items. Si es así, hay que corregirlo.
+							+ "  WHERE idPersonaje=?"); 
 
 			stActualizarPersonaje.setInt(1, paquetePersonaje.getFuerza());
 			stActualizarPersonaje.setInt(2, paquetePersonaje.getDestreza());
@@ -190,6 +191,8 @@ public class Conector {
 			stActualizarPersonaje.setInt(8, paquetePersonaje.getId());
 
 			stActualizarPersonaje.executeUpdate();
+			
+			actualizarItemsPersonaje(paquetePersonaje);
 
 			Servidor.log.append("El personaje " + paquetePersonaje.getNombre() + " se ha actualizado con exito."  + System.lineSeparator());;
 		} catch (SQLException e) {
@@ -197,6 +200,49 @@ public class Conector {
 			e.printStackTrace();
 		}
 
+	}
+
+	/**
+	 * Inserta en la bd si falta algún item
+	 * @param paquetePersonaje personaje que posee los items
+	 */
+	private void actualizarItemsPersonaje(PaquetePersonaje paquetePersonaje) {
+		try {
+			PreparedStatement stExistItem = connect
+					.prepareStatement("SELECT 1 FROM item WHERE idItem = ?");			
+			
+			PreparedStatement stInsertItem = connect
+					.prepareStatement("INSERT INTO item (valorSalud, operacionSalud,"
+							+ "valorFuerza, operacionFuerza, valorDestreza, operacionDestreza,"
+							+ "valorInteligencia, operacionInteligencia, valorEnergia,"
+							+ "operacionEnergia, idPersonaje) VALUES "
+							+ "(?,?,?,?,?,?,?,?,?,?,?)");
+
+			stInsertItem.setInt(11, paquetePersonaje.getId());
+
+			for (Item item : paquetePersonaje.getInventario()) {
+				stExistItem.setInt(1, item.getIdItem());
+
+				//Si existe en la bd, no lo tengo que insertar
+				if (!stExistItem.executeQuery().next()) {
+					stInsertItem.setInt(1, item.getModSalud().getValor());
+					stInsertItem.setInt(2, item.getModSalud().getIdOperacion());
+					stInsertItem.setInt(3, item.getModFuerza().getValor());
+					stInsertItem.setInt(4, item.getModFuerza().getIdOperacion());
+					stInsertItem.setInt(5, item.getModDestreza().getValor());
+					stInsertItem.setInt(6, item.getModDestreza().getIdOperacion());
+					stInsertItem.setInt(7, item.getModInteligencia().getValor());
+					stInsertItem.setInt(8, item.getModInteligencia().getIdOperacion());
+					stInsertItem.setInt(9, item.getModEnergia().getValor());
+					stInsertItem.setInt(10, item.getModEnergia().getIdOperacion());
+					stInsertItem.execute();
+				}
+			}
+		} catch (SQLException e) {
+			Servidor.log.append("Fallo al intentar actualizar los ítems del personaje" + 
+					paquetePersonaje.getNombre()  + System.lineSeparator());
+			e.printStackTrace();
+		}
 	}
 
 	public PaquetePersonaje getPersonaje(PaqueteUsuario user) {
@@ -242,7 +288,7 @@ public class Conector {
 						result.getInt("valorFuerza"), result.getInt("operacionFuerza"),
 						result.getInt("valorDestreza"), result.getInt("operacionDestreza"),
 						result.getInt("valorInteligencia"), result.getInt("operacionInteligencia"),
-						result.getInt("valorEnergia"), result.getInt("operacionEnergia"));
+						result.getInt("valorEnergia"), result.getInt("operacionEnergia"), result.getInt("idItem"));
 			}
 
 			// Devuelvo el paquete personaje con sus datos
