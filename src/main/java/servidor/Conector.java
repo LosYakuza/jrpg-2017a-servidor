@@ -215,8 +215,8 @@ public class Conector {
 					.prepareStatement("INSERT INTO item (valorSalud, operacionSalud,"
 							+ "valorFuerza, operacionFuerza, valorDestreza, operacionDestreza,"
 							+ "valorInteligencia, operacionInteligencia, valorEnergia,"
-							+ "operacionEnergia, idPersonaje) VALUES "
-							+ "(?,?,?,?,?,?,?,?,?,?,?)");
+							+ "operacionEnergia, idPersonaje, name) VALUES "
+							+ "(?,?,?,?,?,?,?,?,?,?,?,?)");
 
 			stInsertItem.setInt(11, paquetePersonaje.getId());
 
@@ -235,6 +235,7 @@ public class Conector {
 					stInsertItem.setInt(8, item.getModInteligencia().getIdOperacion());
 					stInsertItem.setInt(9, item.getModEnergia().getValor());
 					stInsertItem.setInt(10, item.getModEnergia().getIdOperacion());
+					stInsertItem.setString(12, item.getNombre());
 					stInsertItem.execute();
 				}
 			}
@@ -288,7 +289,8 @@ public class Conector {
 						result.getInt("valorFuerza"), result.getInt("operacionFuerza"),
 						result.getInt("valorDestreza"), result.getInt("operacionDestreza"),
 						result.getInt("valorInteligencia"), result.getInt("operacionInteligencia"),
-						result.getInt("valorEnergia"), result.getInt("operacionEnergia"), result.getInt("idItem"));
+						result.getInt("valorEnergia"), result.getInt("operacionEnergia"), 
+						result.getInt("idItem"), result.getString("name"));
 			}
 
 			// Devuelvo el paquete personaje con sus datos
