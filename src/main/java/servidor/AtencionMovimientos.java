@@ -13,8 +13,6 @@ import mensajeria.Comando;
 import mensajeria.PaqueteDeMovimientos;
 
 public class AtencionMovimientos extends Thread {
-	
-	private final Gson gson = new Gson();
 
 	public AtencionMovimientos() {
 		
@@ -38,7 +36,7 @@ public class AtencionMovimientos extends Thread {
 						
 							PaqueteDeMovimientos pdp = (PaqueteDeMovimientos) new PaqueteDeMovimientos(Servidor.getUbicacionPersonajes()).clone();
 							pdp.setComando(Comando.MOVIMIENTO);
-							conectado.getSalida().writeObject(gson.toJson(pdp));	
+							conectado.getSalida().writeObject(pdp.getJson());	
 						
 						}
 					}

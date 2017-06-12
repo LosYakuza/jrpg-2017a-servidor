@@ -25,7 +25,6 @@ public class EscuchaCliente extends Thread {
 	private final ObjectInputStream entrada;
 	private final ObjectOutputStream salida;
 	private int idPersonaje;
-	private final Gson gson = new Gson();
 	
 	private PaquetePersonaje paquetePersonaje;
 	private PaqueteMovimiento paqueteMovimiento;
@@ -52,7 +51,7 @@ public class EscuchaCliente extends Thread {
 
 			String cadenaLeida = (String) entrada.readObject();
 		
-			while (!((paquete = gson.fromJson(cadenaLeida, Paquete.class)).getComando() == Comando.DESCONECTAR)){
+			while (!((paquete = Paquete.loadJson(cadenaLeida)).getComando() == Comando.DESCONECTAR)){
 								
 				switch (paquete.getComando()) {
 				
@@ -61,29 +60,29 @@ public class EscuchaCliente extends Thread {
 					// Paquete que le voy a enviar al usuario
 					paqueteSv.setComando(Comando.REGISTRO);
 					
-					paqueteUsuario = (PaqueteUsuario) (gson.fromJson(cadenaLeida, PaqueteUsuario.class)).clone();
+					paqueteUsuario = (PaqueteUsuario)paquete;
 
 					// Si el usuario se pudo registrar le envio un msj de exito
 					if (Servidor.getConector().registrarUsuario(paqueteUsuario)) {
 						paqueteSv.setMensaje(Paquete.msjExito);
-						salida.writeObject(gson.toJson(paqueteSv));
+						salida.writeObject(paqueteSv.getJson());
 					// Si el usuario no se pudo registrar le envio un msj de fracaso
 					} else {
 						paqueteSv.setMensaje(Paquete.msjFracaso);
-						salida.writeObject(gson.toJson(paqueteSv));
+						salida.writeObject(paqueteSv.getJson());
 					}
 					break;
 
 				case Comando.CREACIONPJ:
 					
 					// Casteo el paquete personaje
-					paquetePersonaje = (PaquetePersonaje) (gson.fromJson(cadenaLeida, PaquetePersonaje.class));
+					paquetePersonaje = (PaquetePersonaje) paquete;
 					
 					// Guardo el personaje en ese usuario
 					Servidor.getConector().registrarPersonaje(paquetePersonaje, paqueteUsuario);
 					
 					// Le envio el id del personaje
-					salida.writeObject(gson.toJson(paquetePersonaje, paquetePersonaje.getClass()));
+					salida.writeObject(paquetePersonaje.getJson());
 					
 					break;
 
@@ -91,7 +90,7 @@ public class EscuchaCliente extends Thread {
 					paqueteSv.setComando(Comando.INICIOSESION);
 					
 					// Recibo el paquete usuario
-					paqueteUsuario = (PaqueteUsuario) (gson.fromJson(cadenaLeida, PaqueteUsuario.class));
+					paqueteUsuario = (PaqueteUsuario) paquete;
 					
 					// Si se puede loguear el usuario le envio un mensaje de exito y el paquete personaje con los datos
 					if (Servidor.getConector().loguearUsuario(paqueteUsuario)) {
@@ -102,11 +101,11 @@ public class EscuchaCliente extends Thread {
 						paquetePersonaje.setMensaje(Paquete.msjExito);
 						idPersonaje = paquetePersonaje.getId();
 						
-						salida.writeObject(gson.toJson(paquetePersonaje));
+						salida.writeObject(paquetePersonaje.getJson());
 						
 					} else {
 						paqueteSv.setMensaje(Paquete.msjFracaso);
-						salida.writeObject(gson.toJson(paqueteSv));
+						salida.writeObject(paqueteSv.getJson());
 					}
 					break;
 
@@ -126,7 +125,7 @@ public class EscuchaCliente extends Thread {
 					return;
 
 				case Comando.CONEXION:
-					paquetePersonaje = (PaquetePersonaje) (gson.fromJson(cadenaLeida, PaquetePersonaje.class)).clone();
+					paquetePersonaje = (PaquetePersonaje) paquete;
 
 					Servidor.getPersonajesConectados().put(paquetePersonaje.getId(), (PaquetePersonaje) paquetePersonaje.clone());
 					Servidor.getUbicacionPersonajes().put(paquetePersonaje.getId(), (PaqueteMovimiento) new PaqueteMovimiento(paquetePersonaje.getId()).clone());
@@ -139,7 +138,7 @@ public class EscuchaCliente extends Thread {
 
 				case Comando.MOVIMIENTO:					
 					
-					paqueteMovimiento = (PaqueteMovimiento) (gson.fromJson((String) cadenaLeida, PaqueteMovimiento.class));
+					paqueteMovimiento = (PaqueteMovimiento)paquete;
 					
 					Servidor.getUbicacionPersonajes().get(paqueteMovimiento.getIdPersonaje()).setPosX(paqueteMovimiento.getPosX());
 					Servidor.getUbicacionPersonajes().get(paqueteMovimiento.getIdPersonaje()).setPosY(paqueteMovimiento.getPosY());
@@ -155,28 +154,28 @@ public class EscuchaCliente extends Thread {
 				case Comando.MOSTRARMAPAS:
 					
 					// Indico en el log que el usuario se conecto a ese mapa
-					paquetePersonaje = (PaquetePersonaje) gson.fromJson(cadenaLeida, PaquetePersonaje.class);
+					paquetePersonaje = (PaquetePersonaje) paquete;
 					Servidor.log.append(socket.getInetAddress().getHostAddress() + " ha elegido el mapa " + paquetePersonaje.getMapa() + System.lineSeparator());
 					break;
 					
 				case Comando.BATALLA:
 					
 					// Le reenvio al id del personaje batallado que quieren pelear
-					paqueteBatalla = (PaqueteBatalla) gson.fromJson(cadenaLeida, PaqueteBatalla.class);
+					paqueteBatalla = (PaqueteBatalla) paquete;
 					Servidor.log.append(paqueteBatalla.getId() + " quiere batallar con " + paqueteBatalla.getIdEnemigo() + System.lineSeparator());
 					
 					//seteo estado de batalla
 					Servidor.getPersonajesConectados().get(paqueteBatalla.getId()).setEstado(Estado.estadoBatalla);
 					Servidor.getPersonajesConectados().get(paqueteBatalla.getIdEnemigo()).setEstado(Estado.estadoBatalla);
 					paqueteBatalla.setMiTurno(true);
-					salida.writeObject(gson.toJson(paqueteBatalla));
+					salida.writeObject(paqueteBatalla.getJson());
 					for(EscuchaCliente conectado : Servidor.getClientesConectados()){
 						if(conectado.getIdPersonaje() == paqueteBatalla.getIdEnemigo()){
 							int aux = paqueteBatalla.getId();
 							paqueteBatalla.setId(paqueteBatalla.getIdEnemigo());
 							paqueteBatalla.setIdEnemigo(aux);
 							paqueteBatalla.setMiTurno(false);
-							conectado.getSalida().writeObject(gson.toJson(paqueteBatalla));
+							conectado.getSalida().writeObject(paqueteBatalla.getJson());
 							break;
 						}
 					}
@@ -188,21 +187,21 @@ public class EscuchaCliente extends Thread {
 					break;
 					
 				case Comando.ATACAR: 
-					paqueteAtacar = (PaqueteAtacar) gson.fromJson(cadenaLeida, PaqueteAtacar.class);
+					paqueteAtacar = (PaqueteAtacar) paquete;
 					for(EscuchaCliente conectado : Servidor.getClientesConectados()) {
 						if(conectado.getIdPersonaje() == paqueteAtacar.getIdEnemigo()) {
-							conectado.getSalida().writeObject(gson.toJson(paqueteAtacar));
+							conectado.getSalida().writeObject(paqueteAtacar.getJson());
 						}
 					}
 					break;
 					
 				case Comando.FINALIZARBATALLA: 
-					paqueteFinalizarBatalla = (PaqueteFinalizarBatalla) gson.fromJson(cadenaLeida, PaqueteFinalizarBatalla.class);
+					paqueteFinalizarBatalla = (PaqueteFinalizarBatalla) paquete;
 					Servidor.getPersonajesConectados().get(paqueteFinalizarBatalla.getId()).setEstado(Estado.estadoJuego);
 					Servidor.getPersonajesConectados().get(paqueteFinalizarBatalla.getIdEnemigo()).setEstado(Estado.estadoJuego);
 					for(EscuchaCliente conectado : Servidor.getClientesConectados()) {
 						if(conectado.getIdPersonaje() == paqueteFinalizarBatalla.getIdEnemigo()) {
-							conectado.getSalida().writeObject(gson.toJson(paqueteFinalizarBatalla));
+							conectado.getSalida().writeObject(paqueteFinalizarBatalla.getJson());
 						}
 					}
 					
@@ -213,14 +212,14 @@ public class EscuchaCliente extends Thread {
 					break;
 					
 				case Comando.ACTUALIZARPERSONAJE:
-					paquetePersonaje = (PaquetePersonaje) gson.fromJson(cadenaLeida, PaquetePersonaje.class);
+					paquetePersonaje = (PaquetePersonaje) paquete;
 					Servidor.getConector().actualizarPersonaje(paquetePersonaje);
 					
 					Servidor.getPersonajesConectados().remove(paquetePersonaje.getId());
 					Servidor.getPersonajesConectados().put(paquetePersonaje.getId(), paquetePersonaje);
 
 					for(EscuchaCliente conectado : Servidor.getClientesConectados()) {
-						conectado.getSalida().writeObject(gson.toJson(paquetePersonaje));
+						conectado.getSalida().writeObject(paquetePersonaje.getJson());
 					}
 					
 					break;
@@ -243,7 +242,7 @@ public class EscuchaCliente extends Thread {
 			for (EscuchaCliente conectado : Servidor.getClientesConectados()) {
 				paqueteDePersonajes = new PaqueteDePersonajes(Servidor.getPersonajesConectados());
 				paqueteDePersonajes.setComando(Comando.CONEXION);
-				conectado.salida.writeObject(gson.toJson(paqueteDePersonajes, PaqueteDePersonajes.class));
+				conectado.salida.writeObject(paqueteDePersonajes.getJson());
 			}
 
 			Servidor.log.append(paquete.getIp() + " se ha desconectado." + System.lineSeparator());
