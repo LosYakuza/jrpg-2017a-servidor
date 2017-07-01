@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import chatServidor.ServidorChat;
 import mensajeria.PaqueteMovimiento;
 import mensajeria.PaquetePersonaje;
 
@@ -35,6 +36,8 @@ public class Servidor extends Thread {
 	private static ServerSocket serverSocket;
 	private static Conector conexionDB;
 	private final int PUERTO = 9999;
+
+	private static ServidorChat serverChat;
 
 	private final static int ANCHO = 700;
 	private final static int ALTO = 640;
@@ -80,6 +83,14 @@ public class Servidor extends Thread {
 				server.start();
 				botonIniciar.setEnabled(false);
 				botonDetener.setEnabled(true);
+
+				try {
+					serverChat = new ServidorChat(10000);
+					serverChat.start();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 
