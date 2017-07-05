@@ -26,10 +26,10 @@ import mensajeria.PaquetePersonaje;
 
 public class Servidor extends Thread {
 
-	private static ArrayList<EscuchaCliente> clientesConectados = new ArrayList<>();
+	private static ArrayList<EscuchaCliente> clientesConectados;
 	
-	private static Map<Integer, PaqueteMovimiento> ubicacionPersonajes = new HashMap<>();
-	private static Map<Integer, PaquetePersonaje> personajesConectados = new HashMap<>();
+	private static Map<Integer, PaqueteMovimiento> ubicacionPersonajes;
+	private static Map<Integer, PaquetePersonaje> personajesConectados ;
 
 	private static Thread server;
 	
@@ -46,13 +46,33 @@ public class Servidor extends Thread {
 
 	public static JTextArea log;
 	
-	public static AtencionConexiones atencionConexiones = new AtencionConexiones();
-	public static AtencionMovimientos atencionMovimientos = new AtencionMovimientos();;
+	public static AtencionConexiones atencionConexiones;
+	public static AtencionMovimientos atencionMovimientos;
 
 	public static void main(String[] args) {
 		cargarInterfaz();	
 	}
 
+	private static void stopServer(){
+		try {
+			server.stop();
+			for (EscuchaCliente cliente : clientesConectados) {
+				cliente.getSalida().close();
+				cliente.getEntrada().close();
+				cliente.getSocket().close();
+			}
+			atencionConexiones.stop();
+			atencionMovimientos.stop();
+			serverSocket.close();
+			serverChat.stopRequest();
+		} catch (IOException e1) {
+			log.append("Fallo al intentar detener el servidor." + System.lineSeparator());
+			e1.printStackTrace();
+		}
+		if(conexionDB != null)
+			conexionDB.close();
+	}
+	
 	private static void cargarInterfaz() {
 		JFrame ventana = new JFrame("Servidor WOME");
 		ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -100,20 +120,7 @@ public class Servidor extends Thread {
 		botonDetener.setBounds(360, ALTO - 70, 100, 30);
 		botonDetener.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-					server.stop();
-					for (EscuchaCliente cliente : clientesConectados) {
-						cliente.getSalida().close();
-						cliente.getEntrada().close();
-						cliente.getSocket().close();
-					}
-					serverSocket.close();
-				} catch (IOException e1) {
-					log.append("Fallo al intentar detener el servidor." + System.lineSeparator());
-					e1.printStackTrace();
-				}
-				if(conexionDB != null)
-					conexionDB.close();
+				stopServer();
 				botonDetener.setEnabled(false);
 				botonIniciar.setEnabled(true);
 			}
@@ -125,22 +132,9 @@ public class Servidor extends Thread {
 		ventana.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent evt) {
 				if (serverSocket != null) {
-					try {
-						server.stop();
-						for (EscuchaCliente cliente : clientesConectados) {
-							cliente.getSalida().close();
-							cliente.getEntrada().close();
-							cliente.getSocket().close();
-						}
-						serverSocket.close();
-					} catch (IOException e) {
-						log.append("Fallo al intentar detener el servidor." + System.lineSeparator());
-						e.printStackTrace();
-						System.exit(1);
-					}
+					stopServer();
 				}
-				if (conexionDB != null)
-					conexionDB.close();
+
 				System.exit(0);
 			}
 		});
@@ -158,6 +152,11 @@ public class Servidor extends Thread {
 			serverSocket = new ServerSocket(PUERTO);
 			log.append("Servidor esperando conexiones..." + System.lineSeparator());
 			String ipRemota;
+			atencionConexiones = new AtencionConexiones();
+			atencionMovimientos = new AtencionMovimientos();
+			ubicacionPersonajes = new HashMap<>();
+			personajesConectados = new HashMap<>();
+			clientesConectados = new ArrayList<>();
 			
 			atencionConexiones.start();
 			atencionMovimientos.start();
@@ -191,7 +190,7 @@ public class Servidor extends Thread {
 	public static Map<Integer, PaquetePersonaje> getPersonajesConectados() {
 		return personajesConectados;
 	}
-
+	
 	public static Conector getConector() {
 		return conexionDB;
 	}

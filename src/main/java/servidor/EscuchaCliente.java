@@ -52,6 +52,7 @@ public class EscuchaCliente extends Thread {
 
 				} catch (IOException | ClassNotFoundException e) {
 					e.printStackTrace();
+					desconectar();
 				} 
 				
 			}
@@ -103,6 +104,8 @@ public class EscuchaCliente extends Thread {
 		Servidor.getUbicacionPersonajes().remove(paquetePersonaje.getId());
 		Servidor.getClientesConectados().remove(this);
 
+		Servidor.log.append("Desconectado "+paquetePersonaje.getNombre()+ System.lineSeparator());
+		
 		for (EscuchaCliente conectado : Servidor.getClientesConectados()) {
 			PaqueteDePersonajes paqueteDePersonajes = new PaqueteDePersonajes(Servidor.getPersonajesConectados());
 			paqueteDePersonajes.setComando(Comando.CONEXION);
@@ -114,6 +117,7 @@ public class EscuchaCliente extends Thread {
 		}
 		
 		this.conectado = false;
+		
 	}
 }
 
