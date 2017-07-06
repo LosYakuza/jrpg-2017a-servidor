@@ -1,5 +1,6 @@
 package servidor;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -17,13 +18,19 @@ import mensajeria.PaqueteUsuario;
  */
 public class Conector {
 
-	private String url = "BaseWome.bd";
+	private String url = "womedata"+File.separator+"BaseWome.bd";
 	private Connection connect;
 
 	/**
 	 * Conectar a la base de datos.
 	 */
 	public void connect() {
+		File f = new File(url);
+		if(!f.exists() || f.isDirectory()) { 
+			Servidor.log.append("No se encuentra base de datos. " + f.getAbsolutePath()
+		+ System.lineSeparator());
+		    return;
+		}
 		try {
 			Servidor.log.append("Estableciendo conexión con la base de datos..." + System.lineSeparator());
 			connect = DriverManager.getConnection("jdbc:sqlite:" + url);
@@ -38,9 +45,11 @@ public class Conector {
 	 * Cerrar la conexión con la base de datos.
 	 */
 	public void close() {
+		if(connect == null)
+			return;
 		try {
 			connect.close();
-		} catch (SQLException ex) {
+		} catch (Exception ex) {
 			Servidor.log.append("Error al intentar cerrar la conexion con la base de datos." + System.lineSeparator());
 			Logger.getLogger(Conector.class.getName()).log(Level.SEVERE, null, ex);
 		}
