@@ -38,60 +38,60 @@ public class EscuchaCliente extends Thread {
 	}
 
 	public void run() {
-			Paquete paquete = new Paquete();
-			String cadenaLeida ;
-			
-			while ( conectado ){
+		Paquete paquete = new Paquete();
+		String cadenaLeida;
 
-				try {
-					cadenaLeida = (String) entrada.readObject();
-					paquete = Paquete.loadJson(cadenaLeida);
-					ComandoServer cs = (ComandoServer) paquete.getComandoObj(ComandoServer.PACKAGEO);
-					cs.setContext(this);
-					cs.ejecutar();
+		while (conectado) {
 
-				} catch (IOException | ClassNotFoundException e) {
-					e.printStackTrace();
-					desconectar();
-				} 
-				
+			try {
+				cadenaLeida = (String) entrada.readObject();
+				paquete = Paquete.loadJson(cadenaLeida);
+				ComandoServer cs = (ComandoServer) paquete.getComandoObj(ComandoServer.PACKAGEO);
+				cs.setContext(this);
+				cs.ejecutar();
+
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+				desconectar();
 			}
+
+		}
 	}
-	
+
 	public Socket getSocket() {
 		return socket;
 	}
-	
+
 	public ObjectInputStream getEntrada() {
 		return entrada;
 	}
-	
+
 	public ObjectOutputStream getSalida() {
 		return salida;
 	}
-	
-	public PaquetePersonaje getPaquetePersonaje(){
+
+	public PaquetePersonaje getPaquetePersonaje() {
 		return paquetePersonaje;
 	}
-	
-	public void setPaquetePersonaje(PaquetePersonaje pp){
+
+	public void setPaquetePersonaje(PaquetePersonaje pp) {
 		this.paquetePersonaje = pp;
 		this.idPersonaje = pp.getId();
 	}
-	
-	public PaqueteUsuario getPaqueteUsuario(){
+
+	public PaqueteUsuario getPaqueteUsuario() {
 		return this.paqueteUsuario;
 	}
-	
-	public void setPaqueteUsuario(PaqueteUsuario pu){
+
+	public void setPaqueteUsuario(PaqueteUsuario pu) {
 		this.paqueteUsuario = pu;
 	}
-	
+
 	public int getIdPersonaje() {
 		return idPersonaje;
 	}
-	
-	public void desconectar(){
+
+	public void desconectar() {
 		try {
 			entrada.close();
 			salida.close();
@@ -100,24 +100,24 @@ public class EscuchaCliente extends Thread {
 			e.printStackTrace();
 		}
 
-		Servidor.getPersonajesConectados().remove(paquetePersonaje.getId());
-		Servidor.getUbicacionPersonajes().remove(paquetePersonaje.getId());
-		Servidor.getClientesConectados().remove(this);
+		if (paquetePersonaje.getEstado() != Estado.estadoOffline) {
+			Servidor.getPersonajesConectados().remove(paquetePersonaje.getId());
+			Servidor.getUbicacionPersonajes().remove(paquetePersonaje.getId());
+			Servidor.getClientesConectados().remove(this);
 
-		Servidor.log.append("Desconectado "+paquetePersonaje.getNombre()+ System.lineSeparator());
-		
-		for (EscuchaCliente conectado : Servidor.getClientesConectados()) {
-			PaqueteDePersonajes paqueteDePersonajes = new PaqueteDePersonajes(Servidor.getPersonajesConectados());
-			paqueteDePersonajes.setComando(Comando.CONEXION);
-			try {
-				conectado.salida.writeObject(paqueteDePersonajes.getJson());
-			} catch (IOException e) {
-				e.printStackTrace();
+			Servidor.log.append("Desconectado " + paquetePersonaje.getNombre() + System.lineSeparator());
+
+			for (EscuchaCliente conectado : Servidor.getClientesConectados()) {
+				PaqueteDePersonajes paqueteDePersonajes = new PaqueteDePersonajes(Servidor.getPersonajesConectados());
+				paqueteDePersonajes.setComando(Comando.CONEXION);
+				try {
+					conectado.salida.writeObject(paqueteDePersonajes.getJson());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
-		
 		this.conectado = false;
-		
+
 	}
 }
-

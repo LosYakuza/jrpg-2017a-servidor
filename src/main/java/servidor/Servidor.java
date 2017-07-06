@@ -23,6 +23,7 @@ import javax.swing.JTextArea;
 import chatServidor.ServidorChat;
 import mensajeria.PaqueteMovimiento;
 import mensajeria.PaquetePersonaje;
+import mensajeria.PaqueteUsuario;
 
 public class Servidor extends Thread {
 
@@ -193,5 +194,18 @@ public class Servidor extends Thread {
 	
 	public static Conector getConector() {
 		return conexionDB;
+	}
+	
+	public static boolean loguearUsuario(PaqueteUsuario user){
+		for(EscuchaCliente e: clientesConectados){
+			if(
+					e.getPaqueteUsuario()!= null &&
+					e.getPaqueteUsuario().getUsername()!= null &&
+					e.getPaqueteUsuario().getUsername().equals(user.getUsername())){
+				return false;
+			}
+		}
+		
+		return getConector().loguearUsuario(user);
 	}
 }
