@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import chat.ArchivoDePropiedades;
 import chatServidor.ServidorChat;
 import mensajeria.PaqueteMovimiento;
 import mensajeria.PaquetePersonaje;
@@ -35,7 +36,7 @@ public class Servidor extends Thread {
 	
 	private static ServerSocket serverSocket;
 	private static Conector conexionDB;
-	private final int PUERTO = 9999;
+	private static ArchivoDePropiedades adp;
 
 	private static ServidorChat serverChat;
 
@@ -83,12 +84,13 @@ public class Servidor extends Thread {
 				server.start();
 				botonIniciar.setEnabled(false);
 				botonDetener.setEnabled(true);
-
+				
+				adp = new ArchivoDePropiedades("config.properties");
+				adp.lectura();
 				try {
-					serverChat = new ServidorChat(10000);
+					serverChat = new ServidorChat(adp.getPuertoChat());
 					serverChat.start();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -155,7 +157,7 @@ public class Servidor extends Thread {
 			conexionDB.connect();
 			
 			log.append("Iniciando el servidor..." + System.lineSeparator());
-			serverSocket = new ServerSocket(PUERTO);
+			serverSocket = new ServerSocket(adp.getPuertoJuego());
 			log.append("Servidor esperando conexiones..." + System.lineSeparator());
 			String ipRemota;
 			
