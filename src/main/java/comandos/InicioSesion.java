@@ -18,7 +18,7 @@ public class InicioSesion extends ComandoServer {
 		PaqueteUsuario paqueteUsuario = (PaqueteUsuario) this.paquete;
 		
 		// Si se puede loguear el usuario le envio un mensaje de exito y el paquete personaje con los datos
-		if (Servidor.getConector().loguearUsuario(paqueteUsuario)) {
+		if (Servidor.loguearUsuario(paqueteUsuario)) {
 			
 			PaquetePersonaje paquetePersonaje = new PaquetePersonaje();
 			paquetePersonaje = Servidor.getConector().getPersonaje(paqueteUsuario);

@@ -20,7 +20,6 @@ jenkins:
 
 * Micaela Ramirez ([mramirez96](https://github.com/mramirez96))
 * Leandro Ibaceta ([libaceta](https://github.com/libaceta))
-* Gabriel Vargas ([Einzamkeit](https://github.com/Einzamkeit))
 * Juan Arana ([aranajuan](https://github.com/aranajuan))
 
 ## Sobre la tecnología
@@ -32,8 +31,21 @@ jenkins:
 
 ## Cómo hacer andar el proyecto
 
-1. Desde el usuario de la organización que creen, deben hacer un fork del proyecto. Esto debe resultar en un nuevo repositorio en la ubicación `www.github.com/organizacion/jrpg-2017a-servidor`, por ejemplo.
-2. Cada uno de los integrantes de la organización debe clonar el repositorio en su computadora de trabajo, idealmente dentro del workspace de Eclipse.
-3. Una vez que lo han clonado, deben importarlo dentro de Eclipse con la opción Import > Existing Projects into Workspace.
-4. Cuando tengan el proyecto disponible, deben explorar las propiedades y cambiarle el encoding a UTF-8. Este paso es importe, ya que el encoding define cómo Eclipse interpreta los caracteres.
-5. Ya pueden ejecutar los tests del proyecto, y si todo funciona correctamente, obtendrán verde como resultado.
+1. Clonar los 3 proyectos
+* ([dominio](https://github.com/LosYakuza/jrpg-2017a-dominio))
+* ([cliente](https://github.com/LosYakuza/jrpg-2017a-cliente))
+* ([servidor](https://github.com/LosYakuza/jrpg-2017a-servidor))
+
+2. Importar en eclise como Gradle Project
+([plugin eclipse](https://projects.eclipse.org/projects/tools.buildship))
+
+3. Ejecutar dominio
+
+4. Copiar /build/libs/jrpg-dominio-0.1.jar al cliente y servidor
+
+5. Ejecutar cliente
+
+6. Copiar /build/libs/jrpg-cliente-0.1.jar al servidor
+
+7. Ejecutar servidor
+
