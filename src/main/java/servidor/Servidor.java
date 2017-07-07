@@ -106,7 +106,7 @@ public class Servidor extends Thread {
 				botonIniciar.setEnabled(false);
 				botonDetener.setEnabled(true);
 				
-				adp = new ArchivoDePropiedades("config.properties");
+				adp = new ArchivoDePropiedades("womedata/config.properties");
 				adp.lectura();
 				try {
 					serverChat = new ServidorChat(adp.getPuertoChat());
