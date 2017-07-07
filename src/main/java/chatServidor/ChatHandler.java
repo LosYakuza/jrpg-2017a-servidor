@@ -38,7 +38,6 @@ public class ChatHandler extends Thread {
 		this.o = new DataOutputStream(new BufferedOutputStream(this.s.getOutputStream()));
 		user = "";
 		handshake();
-		//log.log_debug("Cliente conectado");
 	}
 
 	/**
@@ -50,7 +49,6 @@ public class ChatHandler extends Thread {
 		while (c) {
 			try {
 				Message msg = new Message(i.readUTF());
-				//log.log_all("IN: " + msg);
 				msg.setSource(this.user);
 				process(msg);
 			} catch (IOException e) {
@@ -75,7 +73,7 @@ public class ChatHandler extends Thread {
 			if (m.getType() == Message.CLIENT_DATA && m.getDestination().equals("user")) {
 				login(m);
 			} else {
-				kissoff(); // cierra conexion a cliente
+				kissoff();
 			}
 		} else {
 			m.setSource(this.user);
@@ -90,7 +88,7 @@ public class ChatHandler extends Thread {
 					broadcast(m);
 				}
 			} else {
-				// salida, o cualquier mensaje de status. Descartado por ahora
+				
 			}
 		}
 	}
@@ -117,8 +115,6 @@ public class ChatHandler extends Thread {
 		}
 		ChatHandler.clients.put(this.user, this);
 		sendClientList();
-		//log.userConnected(this.user);
-		//log.log_debug("logueado "+this.user);
 		this.status = ChatHandler.LOGGED;
 	}
 
@@ -185,7 +181,6 @@ public class ChatHandler extends Thread {
 	 * @throws IOException
 	 */
 	private void send(Message m) throws IOException {
-		//log.log_all("OUT ("+this.user+"):" +m.toString());
 		this.o.writeUTF(m.toString());
 		this.o.flush();
 	}
@@ -210,7 +205,7 @@ public class ChatHandler extends Thread {
 			try {
 				ch.sendError("login", "Fuiste desconectado por el server");
 			} catch (IOException e) {
-				//log.log_all("No se pudo noficar usuario expulsado");
+				
 			}
 			clients.remove(usr);
 			ch.kissoff();
@@ -226,8 +221,6 @@ public class ChatHandler extends Thread {
 			return;
 		try {
 			this.s.close();
-			//log.userDisConnected(this.user);
-			//log.log_debug("Cliente desconectado "+this.user);
 			if (!this.user.equals("")) {
 				ChatHandler.clients.remove(this.user);
 			}
