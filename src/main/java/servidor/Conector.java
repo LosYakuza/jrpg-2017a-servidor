@@ -6,10 +6,14 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dominio.Item;
+import dominio.ModificadorSegunItem;
+import dominio.Operacion;
+import mensajeria.PaqueteMercado;
 import mensajeria.PaqueteOfertaMercado;
 import mensajeria.PaquetePersonaje;
 import mensajeria.PaqueteUsuario;
@@ -352,10 +356,12 @@ public class Conector {
 			
 			PreparedStatement stInsertOferta = connect
 					.prepareStatement("INSERT INTO mercado (nameRequerido, itemOfertado,"
-							+ "idPersonaje) VALUES (?,?,?)");
+							+ "idPersonaje, nameOfertado) VALUES (?,?,?,?)");
 			stInsertOferta.setString(1, paqOferta.getOfertas().getFirst().getNameItemRequerido());
 			stInsertOferta.setInt(2, paqOferta.getOfertas().getFirst().getIdItem());
 			stInsertOferta.setInt(3, paqOferta.getOfertas().getFirst().getIdPersonaje());
+			String name = paqOferta.getOfertas().getFirst().getNameItemOfrecido();
+			stInsertOferta.setString(4, name);
 
 			if(!stExistOferta.executeQuery().next()) {
 				stInsertOferta.execute();
@@ -365,6 +371,68 @@ public class Conector {
 			}
 		} catch (SQLException e) {
 			Servidor.log.append("Fallo al registrar la nueva oferta del mercado" + System.lineSeparator());
+		}
+	}
+
+	public PaqueteMercado getOfertas(PaqueteMercado paqMercado) {
+		ResultSet result = null;
+		try {
+			// Selecciono las ofertas que no hayan sido generadas por mi personaje
+			PreparedStatement stOfertas = connect.prepareStatement("SELECT * FROM mercado WHERE idPersonaje != ?");
+			stOfertas.setInt(1, paqMercado.getId());
+			result = stOfertas.executeQuery();
+
+			//Cargo las ofertas
+			while (result != null && result.next()) {
+				paqMercado.addOferta(result.getInt("id"), result.getInt("itemOfertado"),
+						result.getString("nameRequerido"), result.getString("nameOfertado"),
+						result.getInt("idPersonaje"));
+			}
+
+			// Devuelvo el paquete mercado con las ofertas
+			return paqMercado;
+
+		} catch (SQLException ex) {
+			Servidor.log.append("Fallo al intentar recuperar las ofertas " + System.lineSeparator());
+			Servidor.log.append(ex.getMessage() + System.lineSeparator());
+			ex.printStackTrace();
+		}
+
+		return new PaqueteMercado();
+	}
+
+	public void realizarIntercambio(PaqueteOfertaMercado paqOferta) {
+		try {
+			PreparedStatement stDelete = connect.prepareStatement("DELETE FROM mercado WHERE id = ?");
+			stDelete.setInt(1, paqOferta.getOfertas().getFirst().getIdOferta());
+			
+			PreparedStatement stUpdatePj = connect.prepareStatement("UPDATE item "
+					+ "SET idPersonaje = ? "
+					+ "WHERE idItem = ? ");
+
+			
+			PreparedStatement stSelectIdItem = connect.prepareStatement(
+					"SELECT idItem FROM item WHERE idPersonaje = ? AND "
+					+ "name = ?");
+			stSelectIdItem.setInt(1, paqOferta.getIdPjQueQuiereElItem());
+			stSelectIdItem.setString(2, paqOferta.getOfertas().getFirst().getNameItemRequerido());
+			int idItem = stSelectIdItem.executeQuery().getInt("idItem");
+			
+			// Cambio item del q hizo la oferta
+			stUpdatePj.setInt(1, paqOferta.getIdPjQueQuiereElItem());
+			stUpdatePj.setInt(2, paqOferta.getOfertas().getFirst().getIdItem());
+			stUpdatePj.execute();
+		
+			// Cambio item del q hizo el intercambio
+			stUpdatePj.setInt(1, paqOferta.getOfertas().getFirst().getIdPersonaje());
+			stUpdatePj.setInt(2, idItem);
+			stUpdatePj.execute();
+			
+			stDelete.execute();
+		} catch (SQLException ex) {
+			Servidor.log.append("Fallo al intercambiar items " + System.lineSeparator());
+			Servidor.log.append(ex.getMessage() + System.lineSeparator());
+			ex.printStackTrace();
 		}
 	}
 }
