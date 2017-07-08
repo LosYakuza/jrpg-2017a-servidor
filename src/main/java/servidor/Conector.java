@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dominio.Item;
+import mensajeria.PaqueteOfertaMercado;
 import mensajeria.PaquetePersonaje;
 import mensajeria.PaqueteUsuario;
 
@@ -339,5 +340,31 @@ public class Conector {
 		}
 		
 		return new PaqueteUsuario();
+	}
+
+	public void enviarNuevaOferta(PaqueteOfertaMercado paqOferta) {
+		
+		try {
+			PreparedStatement stExistOferta = connect.prepareStatement(
+					"SELECT 1 FROM mercado WHERE itemOfertado = ? AND idPersonaje = ?");			
+			stExistOferta.setInt(1, paqOferta.getOfertas().getFirst().getIdItem());
+			stExistOferta.setInt(2, paqOferta.getOfertas().getFirst().getIdPersonaje());
+			
+			PreparedStatement stInsertOferta = connect
+					.prepareStatement("INSERT INTO mercado (nameRequerido, itemOfertado,"
+							+ "idPersonaje) VALUES (?,?,?)");
+			stInsertOferta.setString(1, paqOferta.getOfertas().getFirst().getNameItemRequerido());
+			stInsertOferta.setInt(2, paqOferta.getOfertas().getFirst().getIdItem());
+			stInsertOferta.setInt(3, paqOferta.getOfertas().getFirst().getIdPersonaje());
+
+			if(!stExistOferta.executeQuery().next()) {
+				stInsertOferta.execute();
+			} else {
+				Servidor.log.append(
+						"Un personaje no puede ofertar un item ya ofertado" + System.lineSeparator());
+			}
+		} catch (SQLException e) {
+			Servidor.log.append("Fallo al registrar la nueva oferta del mercado" + System.lineSeparator());
+		}
 	}
 }
